@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>KnowQA | Document Intelligence</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet">
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<!-- Page Loading Screen -->
+<div id="page-loader">
+    <div class="loader-content">
+        <div class="loader-spinner"></div>
+        <h2>KnowQA</h2>
+        <p>Preparing your workspace...</p>
+    </div>
+</div>
+
+
+<div class="app-shell">
+
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="brand-mark">K</div>
+            <div>
+                <b>KnowQA</b>
+                <small>DOCUMENT INTELLIGENCE</small>
+            </div>
+        </div>
+
+        <div class="side-label">WORKSPACE</div>
+
+        <button class="nav active" data-target="workspace">
+            <span>▦</span> Document workspace
+        </button>
+
+        <button class="nav" data-target="questions">
+            <span>⌕</span> Ask questions
+        </button>
+
+        <button class="nav" data-target="evaluation">
+            <span>◷</span> Evaluation
+        </button>
+
+
+    </aside>
+
+
+    <main class="main">
+
+        <header class="topbar">
+
+            <div>
+                <span class="eyebrow">
+                    AI DOCUMENT QUESTION ANSWERING
+                </span>
+
+                <h1>Ask your documents.</h1>
+
+                <p>
+                    Turn information into answers you can
+                    trace back to the source.
+                </p>
+            </div>
+
+            <div class="status-pill">
+                <i></i> Local workspace
+            </div>
+
+        </header>
+
+
+        <section class="metrics">
+
+            <div class="metric">
+                <span>DOCUMENT</span>
+                <b id="metric-doc">Not uploaded</b>
+                <small>Current source</small>
+            </div>
+
+            <div class="metric">
+                <span>KNOWLEDGE FACTS</span>
+                <b id="metric-facts">—</b>
+                <small>Sentence-level facts</small>
+            </div>
+
+            <div class="metric">
+                <span>INDEXED KEYWORDS</span>
+                <b id="metric-terms">—</b>
+                <small>Unique searchable terms</small>
+            </div>
+
+            <div class="metric">
+                <span>METHOD</span>
+                <b>Rule-based</b>
+                <small>Transparent retrieval</small>
+            </div>
+
+        </section>
+
+
+        <!-- DOCUMENT WORKSPACE -->
+
+        <section id="workspace" class="panel-section">
+
+            <div class="section-heading">
+
+                <div>
+                    <span class="eyebrow">01 / BUILD KNOWLEDGE</span>
+                    <h2>Document workspace</h2>
+
+                    <p>
+                        Upload a document to extract facts and
+                        create its searchable knowledge base.
+                    </p>
+                </div>
+
+                <span class="step-tag">STEP 1</span>
+
+            </div>
+
+
+            <div class="upload-grid">
+
+                <div class="card upload-card">
+
+                    <div class="card-title">
+                        <div class="icon-box">↑</div>
+
+                        <div>
+                            <h3>Load a document</h3>
+                            <p>Choose a file from your device</p>
+                        </div>
+                    </div>
+
+
+                    <label class="dropzone" for="document">
+
+                        <div class="upload-symbol">⇧</div>
+
+                        <b>
+                            Drop your file here or
+                            <u>browse</u>
+                        </b>
+
+                        <span>
+                            TXT, PDF or DOCX · Maximum 15 MB
+                        </span>
+
+                        <input id="document"
+                               type="file"
+                               accept=".txt,.pdf,.docx">
+
+                    </label>
+
+
+                    <div class="file-row" id="file-row">
+                        <span class="file-icon">▤</span>
+                        <span id="file-name">No file selected</span>
+                        <span id="file-size"></span>
+                    </div>
+
+
+                    <button id="build-btn"
+                            class="primary-btn"
+                            disabled>
+                        Build knowledge base
+                        <span>→</span>
+                    </button>
+
+                    <div id="upload-message" class="message"></div>
+
+                </div>
+
+
+                <div class="card explanation-card">
+
+                    <span class="eyebrow">HOW IT WORKS</span>
+
+                    <h3>From document to knowledge</h3>
+
+                    <div class="pipeline">
+
+                        <div class="pipeline-item">
+                            <i>01</i>
+                            <div>
+                                <b>Extract</b>
+                                <small>
+                                    Read text and split it into facts
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="pipe-line"></div>
+
+                        <div class="pipeline-item">
+                            <i>02</i>
+                            <div>
+                                <b>Represent</b>
+                                <small>
+                                    Store facts and normalized keywords
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="pipe-line"></div>
+
+                        <div class="pipeline-item">
+                            <i>03</i>
+                            <div>
+                                <b>Index</b>
+                                <small>
+                                    Map each keyword to matching facts
+                                </small>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="method-chip">
+                        No language model · No embeddings · No RAG
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="card knowledge-card">
+
+                <div class="card-title">
+
+                    <div>
+                        <span class="eyebrow">KNOWLEDGE BASE</span>
+                        <h3>Extracted facts</h3>
+                    </div>
+
+                    <span id="fact-count-label" class="count-tag">
+                        0 FACTS
+                    </span>
+
+                </div>
+
+                <div id="facts-list" class="empty-state">
+
+                    <div class="empty-icon">▤</div>
+
+                    <b>Your knowledge base is waiting</b>
+
+                    <p>
+                        Upload a document and build the knowledge
+                        base to see its facts here.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ASK QUESTIONS -->
+
+        <section id="questions" class="panel-section">
+
+            <div class="section-heading">
+
+                <div>
+                    <span class="eyebrow">
+                        02 / RETRIEVE INFORMATION
+                    </span>
+
+                    <h2>Ask a question</h2>
+
+                    <p>
+                        Questions are matched against indexed facts.
+                        Answers include their source evidence.
+                    </p>
+                </div>
+
+                <span class="step-tag">STEP 2</span>
+
+            </div>
+
+
+            <div class="card ask-card">
+
+                <div class="ask-label">
+
+                    <span class="ask-orb">?</span>
+
+                    <div>
+                        <b>What would you like to know?</b>
+
+                        <small>
+                            Ask only about information contained
+                            in your uploaded document.
+                        </small>
+                    </div>
+
+                </div>
+
+
+                <div class="question-box">
+
+                    <input id="question-input"
+                           placeholder="e.g. What does the knowledge base store?"
+                           autocomplete="off">
+
+                    <button id="ask-btn" class="primary-btn">
+                        Ask question
+                        <span>→</span>
+                    </button>
+
+                </div>
+
+
+                <div class="suggestions">
+
+                    <span>TRY ASKING</span>
+
+                    <button class="suggestion">
+                        What is the main topic?
+                    </button>
+
+                    <button class="suggestion">
+                        How does the system work?
+                    </button>
+
+                    <button class="suggestion">
+                        What are the key features?
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div id="answer-area" class="answer-area"></div>
+
+        </section>
+
+
+        <!-- EVALUATION -->
+
+        <section id="evaluation" class="panel-section">
+
+            <div class="section-heading">
+
+                <div>
+                    <span class="eyebrow">
+                        03 / MEASURE PERFORMANCE
+                    </span>
+
+                    <h2>System evaluation</h2>
+
+                    <p>
+                        Test retrieval and answer keywords with
+                        a small manually prepared question set.
+                    </p>
+                </div>
+
+                <span class="step-tag">STEP 3</span>
+
+            </div>
+
+
+            <div class="card eval-card">
+
+                <div class="card-title">
+
+                    <div>
+                        <h3>Evaluation questions</h3>
+
+                        <p>
+                            Enter one question per line. Add expected
+                            keywords separated by commas after a pipe (|).
+                        </p>
+                    </div>
+
+                    <span class="count-tag">MANUAL TEST SET</span>
+
+                </div>
+
+
+                <textarea id="eval-input"
+                          rows="6"
+                          placeholder="What is a knowledge base? | stores, facts
+What is an inverted index? | keyword, facts
+How does the system answer questions? | retrieve, information"></textarea>
+
+
+                <button id="eval-btn" class="primary-btn">
+                    Run evaluation
+                    <span>→</span>
+                </button>
+
+                <div id="eval-results"></div>
+
+            </div>
+
+
+            <div class="formula-card">
+
+                <div>
+                    <span class="eyebrow">SCORING FORMULA</span>
+
+                    <h3>Transparent fact ranking</h3>
+
+                    <p>
+                        Each candidate fact is ranked using
+                        query coverage and fact precision.
+                    </p>
+                </div>
+
+                <div class="formula">
+                    Score = 0.75 × Coverage
+                    <br>
+                    + 0.25 × Precision
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <footer>
+            KnowQA · Built with Artificial Intelligence
+
+            <span>
+                Knowledge representation · Search · Reasoning
+            </span>
+        </footer>
+
+    </main>
+
+</div>
+
+
+<div id="toast" class="toast"></div>
+
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+
+</body>
+</html>

@@ -1,0 +1,1 @@
+Artificial Intelligence is a branch of computer science. A knowledge base stores facts and relationships. An inverted index maps each keyword to the facts in which it appears. Rule-based reasoning applies predefined rules to stored facts. The system retrieves relevant sentences to answer user questions.

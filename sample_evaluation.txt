@@ -1,0 +1,5 @@
+What is Artificial Intelligence? | computer, science
+What does a knowledge base store? | facts, relationships
+What is an inverted index? | keyword, facts
+How does rule-based reasoning work? | rules, facts
+What is the capital of France? | capital, france
