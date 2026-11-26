@@ -10,6 +10,13 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "knowqa-local-development-key")
 app.config["MAX_CONTENT_LENGTH"] = 15 * 1024 * 1024
 
+@app.route("/api/health")
+def health():
+    return {
+        "status": "success",
+        "message": "KnowQA backend is running"
+    }
+
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
 
