@@ -1,6 +1,7 @@
 const $ = id => document.getElementById(id);
 
 let currentFile = null;
+let currentKB = null;
 
 
 // Display notification message
@@ -55,13 +56,10 @@ $("build-btn").addEventListener("click", async () => {
     if (!currentFile) return;
 
     const fd = new FormData();
-
     fd.append("document", currentFile);
 
     $("build-btn").disabled = true;
-
-    $("build-btn").textContent =
-        "Building knowledge base…";
+    $("build-btn").textContent = "Building knowledge base…";
 
     $("upload-message").textContent =
         "Extracting document text and indexing facts.";
@@ -73,11 +71,22 @@ $("build-btn").addEventListener("click", async () => {
             body: fd
         });
 
-        const d = await r.json();
+        const responseText = await r.text();
+        let d;
+
+        try {
+            d = JSON.parse(responseText);
+        } catch {
+            throw new Error(
+                "Server returned HTML instead of JSON. Check Vercel Runtime Logs."
+            );
+        }
 
         if (!r.ok) {
-            throw Error(d.error);
+            throw new Error(d.error || "Document upload failed.");
         }
+
+        currentKB = d.knowledge_base;
 
         $("metric-doc").textContent = d.filename;
         $("metric-facts").textContent = d.fact_count;
@@ -89,9 +98,9 @@ $("build-btn").addEventListener("click", async () => {
         $("upload-message").textContent = d.message;
         $("upload-message").className = "message";
 
-        await loadFacts();
+        loadFacts(currentKB);
 
-        toast("Knowledge base created");
+        toast("Knowledge base created successfully!");
 
     } catch (err) {
 
@@ -108,24 +117,21 @@ $("build-btn").addEventListener("click", async () => {
 });
 
 
-// Load extracted facts
-async function loadFacts() {
+// Display extracted facts
+function loadFacts(kb) {
 
-    const r = await fetch("/api/knowledge");
-
-    const d = await r.json();
-
-    if (!r.ok) return;
+    if (!kb) return;
 
     $("facts-list").className = "fact-list";
 
-    $("facts-list").innerHTML = d.facts.map(f => `
+    $("facts-list").innerHTML = kb.facts.map(f => `
         <div class="fact">
             <span class="fact-id">F${f.id}</span>
             <p>${escapeHtml(f.sentence)}</p>
         </div>
     `).join("");
 }
+
 
 
 // Prevent HTML injection when displaying text
@@ -143,7 +149,6 @@ function escapeHtml(s) {
 
 // Ask a question
 async function ask() {
-
     const q = $("question-input").value.trim();
 
     if (!q) {
@@ -153,14 +158,11 @@ async function ask() {
     $("ask-btn").disabled = true;
 
     try {
-
         const r = await fetch("/api/ask", {
             method: "POST",
-
             headers: {
                 "Content-Type": "application/json"
             },
-
             body: JSON.stringify({
                 question: q
             })
@@ -169,57 +171,40 @@ async function ask() {
         const d = await r.json();
 
         if (!r.ok) {
-            throw Error(d.error);
+            throw Error(d.error || "Unable to get an answer");
         }
 
         $("answer-area").innerHTML = `
             <div class="answer-card">
-
                 <div class="answer-top">
                     <span>ANSWER GENERATED</span>
-
-                    <span>
-                        ${escapeHtml(d.type.toUpperCase())} QUESTION
-                    </span>
+                    <span>${escapeHtml(d.type.toUpperCase())} QUESTION</span>
                 </div>
 
                 <h3>${escapeHtml(d.question)}</h3>
-
                 <p>${escapeHtml(d.answer)}</p>
 
                 ${d.evidence.length ? `
                     <div class="evidence">
-
-                        <div class="evidence-title">
-                            SOURCE EVIDENCE
-                        </div>
+                        <div class="evidence-title">SOURCE EVIDENCE</div>
 
                         ${d.evidence.map(e => `
                             <div class="evidence-item">
-                                <b>
-                                    FACT ${e.fact_id} · SCORE ${e.score}
-                                </b>
-
+                                <b>FACT ${e.fact_id} · SCORE ${e.score}</b>
                                 ${escapeHtml(e.sentence)}
                             </div>
                         `).join("")}
-
                     </div>
                 ` : ""}
-
             </div>
         `;
 
     } catch (err) {
-
         toast(err.message);
-
     } finally {
-
         $("ask-btn").disabled = false;
     }
 }
-
 
 // Ask button
 $("ask-btn").addEventListener("click", ask);
@@ -247,6 +232,8 @@ document.querySelectorAll(".suggestion").forEach(b => {
 
 
 // Evaluate the system
+
+// Evaluate the system
 $("eval-btn").addEventListener("click", async () => {
 
     const tests = $("eval-input").value
@@ -259,7 +246,6 @@ $("eval-btn").addEventListener("click", async () => {
 
             return {
                 question: parts[0].trim(),
-
                 expected_keywords: (parts[1] || "")
                     .split(",")
                     .map(x => x.trim())
@@ -271,16 +257,15 @@ $("eval-btn").addEventListener("click", async () => {
         return toast("Add evaluation questions");
     }
 
+    $("eval-btn").disabled = true;
+
     try {
 
         const r = await fetch("/api/evaluate", {
-
             method: "POST",
-
             headers: {
                 "Content-Type": "application/json"
             },
-
             body: JSON.stringify({
                 questions: tests
             })
@@ -289,13 +274,11 @@ $("eval-btn").addEventListener("click", async () => {
         const d = await r.json();
 
         if (!r.ok) {
-            throw Error(d.error);
+            throw Error(d.error || "Evaluation failed");
         }
 
         $("eval-results").innerHTML = `
-
             <div class="eval-summary">
-
                 <div class="eval-stat">
                     <b>${d.retrieval_rate}%</b>
                     <span>RETRIEVAL RATE</span>
@@ -305,13 +288,9 @@ $("eval-btn").addEventListener("click", async () => {
                     <b>${d.keyword_accuracy}%</b>
                     <span>KEYWORD ACCURACY</span>
                 </div>
-
             </div>
-
         ` + d.results.map(x => `
-
             <div class="eval-row">
-
                 <b>${escapeHtml(x.question)}</b>
 
                 <span class="${x.keyword_pass ? 'pass' : 'fail'}">
@@ -321,20 +300,20 @@ $("eval-btn").addEventListener("click", async () => {
                 <div>
                     ${x.retrieval_success
                         ? 'Evidence found'
-                        : 'No evidence found'
-                    }
-
+                        : 'No evidence found'}
                     · ${x.matched_keywords}/${x.expected_keywords.length}
                     expected keywords matched
                 </div>
 
+                <div>${escapeHtml(x.answer)}</div>
             </div>
-
         `).join("");
 
     } catch (err) {
-
         toast(err.message);
+
+    } finally {
+        $("eval-btn").disabled = false;
     }
 });
 

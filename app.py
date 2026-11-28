@@ -17,11 +17,14 @@ def health():
         "message": "KnowQA backend is running"
     }
 
-UPLOAD_DIR = Path("uploads")
-UPLOAD_DIR.mkdir(exist_ok=True)
+BASE_DIR = Path(__file__).resolve().parent
+
+UPLOAD_DIR = BASE_DIR / "uploads"
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 # Store uploaded knowledge bases on the server
-KNOWLEDGE_BASES = {}
+KNOWLEDGE_BASES = {} 
+
 
 ALLOWED = {".txt", ".pdf", ".docx"}
 
@@ -318,12 +321,11 @@ def home():
 # Upload document API
 @app.route("/api/upload", methods=["POST"])
 def upload():
+
     file = request.files.get("document")
 
     if not file or not file.filename:
-        return jsonify(
-            error="Please choose a document first."
-        ), 400
+        return jsonify(error="Please choose a document first."), 400
 
     filename = secure_filename(file.filename)
     ext = Path(filename).suffix.lower()
@@ -333,8 +335,10 @@ def upload():
             error="Supported formats: TXT, PDF and DOCX."
         ), 400
 
+    # Vercel allows temporary file storage in /tmp
     stored = UPLOAD_DIR / (uuid.uuid4().hex + ext)
-    file.save(stored)
+
+    file.save(str(stored))
 
     try:
         text = extract_text(stored)
@@ -342,8 +346,7 @@ def upload():
 
         if not kb["facts"]:
             raise ValueError(
-                "No readable text was found. "
-                "Scanned/image-only PDFs are not supported."
+                "No readable text was found."
             )
 
         kb_id = uuid.uuid4().hex
@@ -351,20 +354,26 @@ def upload():
         KNOWLEDGE_BASES[kb_id] = kb
 
         session["kb_id"] = kb_id
-        session["filename"] = filename
+        session.get("kb_id")
 
         return jsonify(
             filename=filename,
             fact_count=kb["fact_count"],
             keyword_count=len(kb["inverted_index"]),
             preview=text[:1800],
-            message="Knowledge base created successfully."
+            message="Knowledge base created successfully.",
+            knowledge_base=kb
         )
 
     except Exception as exc:
-        stored.unlink(missing_ok=True)
         return jsonify(error=str(exc)), 400
 
+    finally:
+        if stored.exists():
+            stored.unlink()
+
+
+# Ask question API
 
 # Ask question API
 @app.route("/api/ask", methods=["POST"])
@@ -373,46 +382,60 @@ def ask():
 
     if not kb:
         return jsonify(
-            error="Upload a document and build its knowledge base first."
+            error="No knowledge base found. Upload your document again."
         ), 400
 
-    question = request.json.get("question", "").strip()
+    data = request.get_json(silent=True) or {}
+    question = data.get("question", "").strip()
 
     if not question:
-        return jsonify(error="Enter a question."), 400
+        return jsonify(error="Please enter a question."), 400
 
-    return jsonify(answer_question(question, kb))
+    result = answer_question(question, kb)
 
+    return jsonify(result)
+
+# Evaluation API
+
+# Evaluation API
 
 # Evaluation API
 @app.route("/api/evaluate", methods=["POST"])
 def evaluate_api():
+
+    data = request.get_json(silent=True) or {}
+
     kb = KNOWLEDGE_BASES.get(session.get("kb_id"))
 
     if not kb:
         return jsonify(
-            error="Upload a document first."
+            error="No knowledge base found. Upload your document first."
         ), 400
 
-    tests = request.json.get("questions", [])
+    tests = data.get("questions", [])
 
     if not tests:
         return jsonify(
-            error="Add at least one question with expected keywords."
+            error="Add at least one evaluation question."
         ), 400
 
-    return jsonify(evaluate(kb, tests))
+    try:
+        result = evaluate(kb, tests)
+        return jsonify(result)
+
+    except Exception as exc:
+        return jsonify(error=str(exc)), 500
 
 
-# Display knowledge base
-@app.route("/api/knowledge")
+# Knowledge base information API
+@app.route("/api/knowledge", methods=["POST"])
 def knowledge():
-    kb = KNOWLEDGE_BASES.get(session.get("kb_id"))
+
+    data = request.get_json(silent=True) or {}
+    kb = data.get("knowledge_base")
 
     if not kb:
-        return jsonify(
-            error="No knowledge base found."
-        ), 400
+        return jsonify(error="No knowledge base provided."), 400
 
     return jsonify({
         "source": kb["source"],
@@ -420,6 +443,7 @@ def knowledge():
         "facts": kb["facts"],
         "keyword_count": len(kb["inverted_index"])
     })
+
 
 
 if __name__ == "__main__":
